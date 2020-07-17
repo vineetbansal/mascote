@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 
 MASCOTE_HOME="/path/to/MASCoTE/"
@@ -36,7 +36,7 @@ set -o xtrace
 PS4='\''[\t]'\'
 
 
-echo -e "\033[1m\033[95m### Simulating datasets with number of clones '${CLONES}' \033[0m"
+echo -e "\033[1m\033[95m### Simulating datasets with number of clones '${N}' \033[0m"
 
 SEED=${RANDOM}
 echo -e "\033[1m\033[95m## Selecting random seed: '${SEED}' \033[0m"

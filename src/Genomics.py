@@ -1,11 +1,15 @@
 import math
 import copy
 import random
+import gzip
 from collections import Counter
 
 import Support
 
 
+# An alternative to 'open' for reading/writing either regular or gzip files
+# based on the filename of the first argument.
+_open = lambda *args: gzip.open(*args) if args[0].endswith('.gz') else open(*args)
 
 class HumanGenome:
 
@@ -25,11 +29,12 @@ class HumanGenome:
     def buildGenome(self, maternalout, paternalout):
         self.maternalfa = maternalout
         self.paternalfa = paternalout
-        with open(self.maternalfa, 'w') as mafa:
-            with open(self.paternalfa, 'w') as pafa:
+
+        with _open(self.maternalfa, 'w') as mafa:
+            with _open(self.paternalfa, 'w') as pafa:
                 name = ''
-                sequence = []
-                with open(self.reference, 'r') as ref:
+                sequence = ''
+                with _open(self.reference, 'r') as ref:
                     for line in ref:
                         if line != '':
                             if line[0] == '>':
@@ -41,11 +46,12 @@ class HumanGenome:
                                     pafa.write("{}\n".format(''.join(paternalhap)))
                                     self.chromosomes.append(name)
                                     self.lengths[name] = length
-                                name = line.strip()[1:]
-                                sequence = []
+                                name = Support.chromosome_name(line.strip()[1:].split()[0])
+                                sequence = ''
                             else:
-                                if not name is self.ignorelist:
-                                    sequence += list(line.strip())
+                                if not name in self.ignorelist:
+                                    sequence += line.strip()
+
                     if len(sequence) > 0:
                         if name != '' and not name in self.ignorelist:
                             mafa.write(">{}\n".format(name))
@@ -56,16 +62,15 @@ class HumanGenome:
                             self.chromosomes.append(name)
                             self.lengths[name] = length
 
-
     def buildHaplotypes(self, chromosome, sequence):
-        mhap = copy.deepcopy(sequence)# if s != 'N' and s != 'n' and s != '*']
-        phap = copy.deepcopy(sequence)
+        mhap = list(sequence)# if s != 'N' and s != 'n' and s != '*']
+        phap = list(sequence)
         lenchr = len(mhap)
-        if self.snplist == None:
+        if self.snplist is None:
             assert(0 <= self.snpratio <= 1.0)
             snplist = {snp : set(random.sample(['A','T','C','G'], 2)) for snp in random.sample(xrange(len(mhap)), int(round(len(mhap) * self.snpratio)))}
         else:
-            snplist = self.snplist[chromosome]
+            snplist = self.snplist.get(chromosome, [])
 
         for snp in snplist:
             if snp < lenchr:
@@ -151,10 +156,10 @@ class Clone:
                 result += ''.join(referencesequence[bi])
             return result
 
-        with open(self.humanGenome.maternalfa, 'r') as mafa:
-            with open(maternaloutput, 'w') as maout:
+        with _open(self.humanGenome.maternalfa, 'r') as mafa:
+            with _open(maternaloutput, 'w') as maout:
                 name = ''
-                sequence = []
+                sequence = ''
                 for line in mafa:
                     if line != '':
                         if line[0] == '>':
@@ -163,20 +168,20 @@ class Clone:
                                 assert(len(sequence) == self.genome[name].length)
                                 maout.write("{}\n".format(buildChromosome(sequence, self.genome[name].maternalHaplotype, self.genome[name].reference)))
                             name = line.strip()[1:]
-                            sequence = []
+                            sequence = ''
                         else:
                             if name in self.chromosomes and self.genome[name].maternalHaplotypeLength > 0:
-                                sequence += list(line.strip())
+                                sequence += line.strip()
                 if len(sequence) > 0:
                     if name != '' and name in self.chromosomes:
                         maout.write(">{}\n".format(name))
                         assert(len(sequence) == self.genome[name].length)
                         maout.write("{}\n".format(buildChromosome(sequence, self.genome[name].maternalHaplotype, self.genome[name].reference)))
 
-        with open(self.humanGenome.paternalfa, 'r') as pafa:
-            with open(paternaloutput, 'w') as paout:
+        with _open(self.humanGenome.paternalfa, 'r') as pafa:
+            with _open(paternaloutput, 'w') as paout:
                 name = ''
-                sequence = []
+                sequence = ''
                 for line in pafa:
                     if line != '':
                         if line[0] == '>':
@@ -185,10 +190,10 @@ class Clone:
                                 assert(len(sequence) == self.genome[name].length)
                                 paout.write("{}\n".format(buildChromosome(sequence, self.genome[name].paternalHaplotype, self.genome[name].reference)))
                             name = line.strip()[1:]
-                            sequence = []
+                            sequence = ''
                         else:
                             if name in self.chromosomes:
-                                sequence += list(line.strip())
+                                sequence += line.strip()
                 if len(sequence) > 0:
                     if name != '' and name in self.chromosomes and self.genome[name].paternalHaplotypeLength > 0:
                         paout.write(">{}\n".format(name))

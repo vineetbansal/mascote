@@ -59,11 +59,12 @@ def parseSNPList(filename):
             for line in f:
                 line = line.strip().split()
                 if len(line) > 2:
+                    chromosome = chromosome_name(line[0])
                     pos = int(line[1])
-                    if not line[0] in snplist:
-                        snplist[line[0]] = {}
+                    if not chromosome in snplist:
+                        snplist[chromosome] = {}
                     if not pos in snplist[line[0]]:
-                        snplist[line[0]][pos] = set(char.upper() for rest in line[2:] for char in rest if char.upper() in ('A', 'C', 'G', 'T'))
+                        snplist[chromosome][pos] = set(char.upper() for rest in line[2:] for char in rest if char.upper() in ('A', 'C', 'G', 'T'))
         return snplist
     else:
         return None
@@ -136,3 +137,12 @@ def basesize(isize):
         return size
     except:
         raise ValueError(sp.error("Size must be a number, optionally ending with either \"kb\" or \"Mb\"!"))
+
+
+def chromosome_name(s):
+    """
+    Normalize a chromosome name to a UCSC-style naming convention by adding a 'chr' prefix if necessary
+    :param s: A chromosome identifier to be normalized (e.g. '1', '15', 'X', 'chr8' etc.)
+    :return: The normalized chromosome name ('chr1', 'chr15', 'chrX', 'chr8' etc.)
+    """
+    return s if s.startswith('chr') else ('chr' + s)

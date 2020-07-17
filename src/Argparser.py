@@ -100,7 +100,7 @@ def parse_mascotte_arguments():
         with open(args.ignore) as f:
             for line in f:
                 if line != '':
-                    ignorelist.append(line.strip())
+                    ignorelist.append(sp.chromosome_name(line.strip()))
 
     binsize = sp.basesize(args.binsize)
 
